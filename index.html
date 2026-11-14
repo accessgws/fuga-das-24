@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Fuga das 24h — Charge Arcade</title>
   <meta name="description" content="A eleição acabou e o relógio de 24h começou! Corra a pé, de carro e de avião com até 4 jogadores antes que o mandado te alcance!" />
   <meta name="theme-color" content="#020617" />
@@ -18,11 +18,20 @@
   <style>
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html, body {
-      margin: 0; padding: 0; width: 100%; height: 100%; height: 100dvh; overflow: hidden;
+      position: fixed; inset: 0;
+      margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
       background-color: #020617;
       font-family: 'Fredoka', 'Inter', system-ui, -apple-system, sans-serif;
       user-select: none; -webkit-user-select: none;
       touch-action: none;
+    }
+    #gameCanvas {
+      position: fixed !important;
+      inset: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      display: block !important;
+      touch-action: none !important;
     }
     /* Permite rolagem vertical suave com o dedo dentro dos modais no celular */
     .overflow-y-auto {
@@ -190,19 +199,23 @@
       transform: translateY(3px);
       box-shadow: 0 1px 0 #052e16;
     }
+    @media (min-width: 780px), (orientation: landscape) and (max-height: 600px) {
+      .landscape-lobby-card { max-width: min(940px, 96vw) !important; max-height: 94dvh !important; }
+      .landscape-lobby-grid { display: grid !important; grid-template-columns: 1.04fr 0.96fr; gap: 0.85rem; align-items: start; }
+      .landscape-go-card { max-width: min(880px, 96vw) !important; max-height: 94dvh !important; }
+      .landscape-go-grid { display: grid !important; grid-template-columns: 1.06fr 0.94fr; gap: 0.85rem; align-items: center; }
+    }
     @media (orientation: landscape) and (max-height: 560px) {
-      .landscape-lobby-card { max-width: 95vw; padding: 0.65rem 0.9rem; }
-      .landscape-lobby-grid { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 0.75rem; align-items: start; }
-      .landscape-go-card { max-width: 95vw; padding: 0.65rem 0.9rem; }
-      .landscape-go-grid { display: grid; grid-template-columns: 1.08fr 0.92fr; gap: 0.75rem; align-items: center; }
-      .landscape-preview-img { height: 6.4rem !important; }
+      .landscape-lobby-card { padding: 0.65rem 0.9rem !important; }
+      .landscape-go-card { padding: 0.65rem 0.9rem !important; }
+      .landscape-preview-img { height: 6.2rem !important; }
     }
   </style>
 </head>
 <body class="relative">
 
   <!-- CANVAS PRINCIPAL EM TELA CHEIA -->
-  <canvas id="gameCanvas" style="touch-action: none; display: block; width: 100%; height: 100%;"></canvas>
+  <canvas id="gameCanvas"></canvas>
 
   <!-- OVERLAY DE ROTAÇÃO INTELIGENTE (RETRATO MOBILE) -->
   <div id="rotateOverlay" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
@@ -237,7 +250,7 @@
   </div>
 
   <!-- HUD SUPERIOR FIXO ESTILO ARCADE -->
-  <header id="gameHud" class="safe-top-hud fixed top-0 left-0 right-0 z-20 flex flex-col gap-1 sm:gap-1.5 px-2 pt-2 sm:px-5 sm:pt-3 pointer-events-none">
+  <header id="gameHud" class="safe-top-hud fixed top-0 left-0 right-0 z-40 flex flex-col gap-1 sm:gap-1.5 px-2 pt-2 sm:px-5 sm:pt-3 pointer-events-none">
     <div class="flex items-center justify-between gap-1.5 sm:gap-2">
       <!-- Esquerda: Início / Garagem ou Placa de Recorde -->
       <div class="flex items-center gap-1.5 pointer-events-auto">
@@ -272,34 +285,34 @@
       </div>
 
       <!-- Centro: Placas Arcade de Distância, Relógio 24h, Perseguidor e Chapa -->
-      <div id="hudCenterMetrics" class="hidden flex items-center gap-1 sm:gap-2 pointer-events-auto">
+      <div id="hudCenterMetrics" class="hidden flex items-center gap-1 sm:gap-2 pointer-events-auto min-w-0">
         <!-- Placa Distância -->
-        <div class="glass-pill rounded-2xl px-2.5 py-1 sm:px-3 sm:py-1.5 flex items-center gap-1.5">
-          <span id="hudPhaseDot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0 border border-slate-950"></span>
+        <div class="glass-pill rounded-2xl px-1.5 py-1 sm:px-3 sm:py-1.5 flex items-center gap-1 sm:gap-1.5">
+          <span id="hudPhaseDot" class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0 border border-slate-950"></span>
           <div>
-            <p class="text-[8px] font-black uppercase tracking-wider text-sky-300 leading-none">Distância</p>
-            <p id="hudScore" class="text-xs sm:text-sm font-black text-white tabular-nums leading-tight">0 m</p>
+            <p class="text-[7.5px] sm:text-[8px] font-black uppercase tracking-wider text-sky-300 leading-none">Distância</p>
+            <p id="hudScore" class="text-[11px] sm:text-sm font-black text-white tabular-nums leading-tight">0 m</p>
           </div>
         </div>
 
         <!-- Placa Relógio 24h -->
-        <div id="hudClockPill" class="glass-pill rounded-2xl px-2.5 py-1 sm:px-3 sm:py-1.5 flex items-center gap-1.5 transition-colors">
-          <svg id="hudClockIcon" class="w-4 h-4 text-amber-300 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <div id="hudClockPill" class="glass-pill rounded-2xl px-1.5 py-1 sm:px-3 sm:py-1.5 flex items-center gap-1 sm:gap-1.5 transition-colors">
+          <svg id="hudClockIcon" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-300 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
           </svg>
           <div>
-            <p id="hudClockLabel" class="text-[8px] font-black uppercase tracking-wider text-amber-300 leading-none">Prazo 24h</p>
-            <p id="hudClock24" class="text-xs sm:text-sm font-black text-amber-200 tabular-nums leading-tight">24:00h</p>
+            <p id="hudClockLabel" class="text-[7.5px] sm:text-[8px] font-black uppercase tracking-wider text-amber-300 leading-none">Prazo 24h</p>
+            <p id="hudClock24" class="text-[11px] sm:text-sm font-black text-amber-200 tabular-nums leading-tight">24:00h</p>
           </div>
         </div>
 
         <!-- Placa Radar do Perseguidor com Barra de Pressão -->
-        <div id="hudChaserPill" class="glass-pill rounded-2xl px-2.5 py-1 sm:px-3 sm:py-1.5 flex items-center gap-1.5">
-          <span id="hudChaserDot" class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping shrink-0"></span>
-          <div class="min-w-[54px] sm:min-w-[66px]">
+        <div id="hudChaserPill" class="glass-pill rounded-2xl px-1.5 py-1 sm:px-3 sm:py-1.5 flex items-center gap-1 sm:gap-1.5">
+          <span id="hudChaserDot" class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-rose-500 animate-ping shrink-0"></span>
+          <div class="min-w-[42px] sm:min-w-[66px]">
             <div class="flex items-center justify-between gap-1">
-              <p class="text-[8px] font-black uppercase tracking-wider text-rose-300 leading-none">Sirene</p>
-              <p id="hudChaserDist" class="text-[9px] sm:text-[10px] font-black text-rose-200 tabular-nums leading-none">NA COLA!</p>
+              <p class="text-[7.5px] sm:text-[8px] font-black uppercase tracking-wider text-rose-300 leading-none">Sirene</p>
+              <p id="hudChaserDist" class="text-[8px] sm:text-[10px] font-black text-rose-200 tabular-nums leading-none">NA COLA!</p>
             </div>
             <div class="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden border border-slate-700 mt-1">
               <div id="hudChaserBarFill" class="h-full bg-gradient-to-r from-amber-400 to-rose-500 rounded-full transition-all duration-150" style="width: 50%"></div>
@@ -412,7 +425,7 @@
   </div>
 
   <!-- MODAL DE PAUSA ('PAUSED') -->
-  <section id="pauseOverlay" class="hidden fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+  <section id="pauseOverlay" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="glass-panel animate-modal w-full max-w-sm rounded-3xl p-5 text-center">
       <div class="hazard-bar mb-3"></div>
       <span class="inline-flex items-center gap-1 rounded-full bg-amber-400 text-slate-950 border-2 border-slate-950 px-3 py-0.5 text-[10px] font-black uppercase tracking-widest mb-1">
@@ -440,7 +453,7 @@
   </section>
 
   <!-- MODAL DO MANUAL DA FUGA / DOSSIÊ DE OBSTÁCULOS & REGRAS -->
-  <section id="guideOverlay" class="hidden fixed inset-0 z-40 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+  <section id="guideOverlay" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
     <div class="glass-panel animate-modal w-full max-w-xl rounded-3xl p-4 sm:p-5 text-left max-h-[92vh] overflow-y-auto">
       <div class="hazard-bar mb-2.5"></div>
       <div class="flex items-center justify-between gap-2 mb-2">
@@ -504,8 +517,8 @@
   </section>
 
   <!-- TELA INICIAL / LOBBY DA COMITIVA ('START') -->
-  <section id="startOverlay" class="fixed inset-0 z-30 flex items-center justify-center p-2.5 sm:p-4">
-    <div class="glass-panel animate-modal landscape-lobby-card w-full max-w-2xl rounded-3xl p-4 sm:p-5 text-center max-h-[95vh] overflow-y-auto">
+  <section id="startOverlay" class="fixed inset-0 z-30 pointer-events-none flex items-center justify-center pt-14 sm:pt-16 pb-2.5 sm:pb-4 px-2 sm:px-4">
+    <div class="glass-panel animate-modal pointer-events-auto landscape-lobby-card w-full max-w-2xl rounded-3xl p-3.5 sm:p-5 text-center max-h-full overflow-y-auto">
       <div class="hazard-bar mb-2.5"></div>
 
       <!-- Banner de Desafio Direto (?rival=Nome&recorde=XXX) -->
@@ -690,8 +703,8 @@
   </section>
 
   <!-- TELA DE GAME OVER ('GAMEOVER') COM CARIMBO DE CHARGE E BOLETIM PNG -->
-  <section id="gameOverOverlay" class="hidden fixed inset-0 z-30 flex items-center justify-center p-2.5 sm:p-4">
-    <div class="glass-panel animate-modal landscape-go-card w-full max-w-xl rounded-3xl p-4 sm:p-5 text-center max-h-[95vh] overflow-y-auto">
+  <section id="gameOverOverlay" class="hidden fixed inset-0 z-30 pointer-events-none flex items-center justify-center pt-14 sm:pt-16 pb-2.5 sm:pb-4 px-2 sm:px-4">
+    <div class="glass-panel animate-modal pointer-events-auto landscape-go-card w-full max-w-xl rounded-3xl p-3.5 sm:p-5 text-center max-h-full overflow-y-auto">
       <div class="hazard-bar mb-2.5"></div>
       <div class="landscape-go-grid">
         <!-- Coluna Esquerda: Carimbo Cômico, Placar, Destino da Chapa e Zoação -->
@@ -793,7 +806,7 @@
   </section>
 
   <!-- MODAL DE SEGUNDA CHANCE / REVIVER POR VÍDEO ('REVIVE_PROMPT') -->
-  <section id="reviveOverlay" class="hidden fixed inset-0 z-40 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+  <section id="reviveOverlay" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
     <div class="glass-panel animate-modal w-full max-w-md rounded-3xl p-4 sm:p-5 text-center">
       <div class="hazard-bar mb-2.5"></div>
       <span class="inline-flex items-center gap-1 rounded-full bg-rose-600 text-white border-2 border-slate-950 px-3 py-0.5 text-[10px] font-black uppercase tracking-widest mb-1 animate-bounce">
@@ -830,7 +843,7 @@
   </section>
 
   <!-- MODAL DA LOJA DE CAMPANHA & PASSAPORTE DIPLOMÁTICO VIP (SEM ADS) -->
-  <section id="shopOverlay" class="hidden fixed inset-0 z-40 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+  <section id="shopOverlay" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
     <div class="glass-panel animate-modal w-full max-w-xl rounded-3xl p-4 sm:p-5 text-left max-h-[93vh] overflow-y-auto">
       <div class="hazard-bar mb-2.5"></div>
       <div class="flex items-center justify-between gap-2 mb-2.5">
@@ -919,7 +932,7 @@
   </section>
 
   <!-- PLAYER DE ANÚNCIO PREMIADO / SIMULADOR H5 GAMES ADS -->
-  <section id="adPlayerOverlay" class="hidden fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4">
+  <section id="adPlayerOverlay" class="hidden fixed inset-0 z-[60] bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-panel animate-modal w-full max-w-md rounded-3xl p-5 text-center">
       <div class="hazard-bar mb-3"></div>
       <div class="flex items-center justify-between text-[10px] font-black uppercase text-amber-300 mb-2">
@@ -940,7 +953,7 @@
   </section>
 
   <!-- TOAST FLUTUANTE -->
-  <div id="toastBanner" class="fixed bottom-3 left-1/2 -translate-x-1/2 z-50 hidden glass-pill rounded-full px-4 py-2 text-xs font-black text-white flex items-center gap-2">
+  <div id="toastBanner" class="fixed bottom-3 left-1/2 -translate-x-1/2 z-[60] hidden glass-pill rounded-full px-4 py-2 text-xs font-black text-white flex items-center gap-2">
     <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 border border-slate-950"></span>
     <span id="toastText">Pronto!</span>
   </div>
@@ -948,6 +961,21 @@
   <script>
     (function () {
       'use strict';
+
+      // Polyfill de roundRect para Safari/Chrome WebViews antigos no mobile
+      if (typeof CanvasRenderingContext2D !== 'undefined' && !CanvasRenderingContext2D.prototype.roundRect) {
+        CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+          const rad = typeof r === 'number' ? r : (Array.isArray(r) ? r[0] : 0) || 0;
+          const rr = Math.min(rad, Math.abs(w) / 2, Math.abs(h) / 2);
+          this.moveTo(x + rr, y);
+          this.arcTo(x + w, y, x + w, y + h, rr);
+          this.arcTo(x + w, y + h, x, y + h, rr);
+          this.arcTo(x, y + h, x, y, rr);
+          this.arcTo(x, y, x + w, y, rr);
+          this.closePath();
+          return this;
+        };
+      }
 
       // =========================================================================
       // 1. REFERÊNCIAS DO DOM E CONSTANTES
@@ -1262,6 +1290,16 @@
         } catch (e) {}
       }
 
+      function saveWalletCoins() {
+        saveWalletAndVip();
+      }
+
+      function addCoins(amount) {
+        walletCoins = Math.max(0, walletCoins + Math.round(amount || 0));
+        saveWalletAndVip();
+        updateWalletAndBoostsUI();
+      }
+
       function isComboUnlocked(c) { return hasVipPass || bestScore >= c.unlockMeters; }
       if (!isComboUnlocked(COMBO_PACKS.find((c) => c.id === selectedComboId) || COMBO_PACKS[0])) {
         selectedComboId = 'teco';
@@ -1344,6 +1382,11 @@
         if (btnBuyVipPassText) {
           btnBuyVipPassText.textContent = hasVipPass ? '✓ PASSAPORTE VIP ATIVO' : 'PIX R$ 9,90 • ATIVAR VIP';
         }
+        if (btnReviveWatchAdText) {
+          btnReviveWatchAdText.textContent = hasVipPass
+            ? '👑 VIP GRÁTIS • CONTINUAR FUGA!'
+            : 'VER VÍDEO CURTO • CONTINUAR FUGA!';
+        }
         if (btnBuyVipPass) {
           btnBuyVipPass.className = hasVipPass
             ? 'btn-primary rounded-2xl py-2.5 px-4 font-black text-xs text-white uppercase tracking-wider shrink-0 cursor-pointer'
@@ -1422,7 +1465,7 @@
       let skylineNightCacheCanvas = null;
       const skyStars = Array.from({ length: 44 }, (_, idx) => ({
         xRatio: ((idx * 97) % 100) / 100,
-        y: 26 + ((idx * 53) % 270),
+        yRatio: 0.04 + (((idx * 53) % 100) / 100) * 0.50,
         r: 1.1 + (idx % 3) * 0.65,
         phase: idx * 0.8
       }));
@@ -2247,20 +2290,26 @@
         }
       }
 
+      let lastViewportW = 0;
+      let lastViewportH = 0;
+
       function resizeCanvas() {
+        const rect = canvas.getBoundingClientRect ? canvas.getBoundingClientRect() : null;
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
-        const width = window.innerWidth;
-        const height = window.innerHeight;
-        isLandscapeMode = width > height;
+        const width = Math.max(1, (rect && rect.width > 0) ? rect.width : (window.innerWidth || document.documentElement.clientWidth || 1280));
+        const height = Math.max(1, (rect && rect.height > 0) ? rect.height : (window.innerHeight || document.documentElement.clientHeight || 720));
+        lastViewportW = width;
+        lastViewportH = height;
+        isLandscapeMode = width >= height;
 
-        canvas.width = Math.max(1, Math.floor(width * dpr));
-        canvas.height = Math.max(1, Math.floor(height * dpr));
+        canvas.width = Math.max(1, Math.round(width * dpr));
+        canvas.height = Math.max(1, Math.round(height * dpr));
 
-        // No modo Retrato Mobile ("Jogar em Pé"), garante no mínimo 650px de visão horizontal da pista
+        // No modo Retrato Mobile ("Jogar em Pé"), garante visão horizontal confortável sem deixar o boneco minúsculo
         const baseWorldH = 720;
         const rawScale = canvas.height / baseWorldH;
         const rawWorldW = canvas.width / rawScale;
-        const minPortraitWorldW = 650;
+        const minPortraitWorldW = 540;
 
         if (!isLandscapeMode && rawWorldW < minPortraitWorldW) {
           worldWidth = minPortraitWorldW;
@@ -2274,16 +2323,16 @@
 
         GROUND_Y = isLandscapeMode
           ? WORLD_HEIGHT - 96
-          : Math.min(WORLD_HEIGHT - 165, Math.max(520, Math.floor(WORLD_HEIGHT * 0.77)));
-        CEILING_Y = isLandscapeMode ? 76 : Math.max(105, Math.floor(WORLD_HEIGHT * 0.14));
+          : Math.min(WORLD_HEIGHT - 135, Math.max(520, Math.floor(WORLD_HEIGHT * 0.78)));
+        CEILING_Y = isLandscapeMode ? 76 : Math.max(108, Math.floor(WORLD_HEIGHT * 0.14));
         jumpScaleFactor = isLandscapeMode ? Math.max(0.84, Math.min(0.96, height / 460)) : 1.0;
 
         player.x = isLandscapeMode
           ? Math.max(255, Math.min(340, worldWidth * 0.25))
-          : Math.max(165, Math.min(225, worldWidth * 0.28));
+          : Math.max(145, Math.min(205, worldWidth * 0.28));
 
-        if (player.grounded) player.y = GROUND_Y;
-        squadMembers.forEach((m) => { if (m.grounded) m.y = GROUND_Y; });
+        if (player.grounded || player.y > GROUND_Y) player.y = GROUND_Y;
+        squadMembers.forEach((m) => { if (m.grounded || m.y > GROUND_Y) m.y = GROUND_Y; });
       }
 
       function handleViewportChange() {
@@ -2291,9 +2340,20 @@
         updateOrientationOverlay();
       }
       window.addEventListener('resize', handleViewportChange);
+      window.addEventListener('fullscreenchange', () => setTimeout(handleViewportChange, 60));
+      window.addEventListener('webkitfullscreenchange', () => setTimeout(handleViewportChange, 60));
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', handleViewportChange);
+      }
+      if (typeof ResizeObserver !== 'undefined') {
+        try {
+          new ResizeObserver(handleViewportChange).observe(canvas);
+        } catch (err) {}
+      }
       window.addEventListener('orientationchange', () => {
         handleViewportChange();
         setTimeout(handleViewportChange, 180);
+        setTimeout(handleViewportChange, 450);
       });
 
       btnActivateLandscape.addEventListener('click', (e) => { e.stopPropagation(); activateLandscapeFullscreen(); });
@@ -2392,7 +2452,7 @@
         for (let i = 0; i < 8; i++) {
           clouds.push({
             x: Math.random() * 1400,
-            y: 65 + Math.random() * 320,
+            yRatio: 0.08 + Math.random() * 0.44,
             scale: 0.55 + Math.random() * 0.8,
             speedFactor: 0.14 + Math.random() * 0.14,
             alpha: 0.45 + Math.random() * 0.4
@@ -2687,8 +2747,8 @@
         if (reviveOverlay) reviveOverlay.classList.add('hidden');
         if (shopOverlay) shopOverlay.classList.add('hidden');
         if (mobileActionBtnWrap) mobileActionBtnWrap.classList.add('hidden');
-        if (hudCoinsBtn) hudCoinsBtn.classList.remove('hidden', 'sm:flex');
-        if (btnRotateScreen) btnRotateScreen.classList.remove('hidden', 'sm:flex');
+        if (hudCoinsBtn) hudCoinsBtn.classList.remove('max-sm:hidden');
+        if (btnRotateScreen) btnRotateScreen.classList.remove('max-sm:hidden');
         hudCenterMetrics.classList.add('hidden');
         hudPhaseProgressWrap.classList.add('hidden');
         multiTouchOverlay.classList.add('hidden');
@@ -2795,8 +2855,8 @@
         hudStartBestPill.classList.add('hidden');
         btnHudHome.classList.remove('hidden');
         if (btnPause) btnPause.classList.remove('hidden');
-        if (hudCoinsBtn) hudCoinsBtn.classList.add('hidden', 'sm:flex');
-        if (btnRotateScreen) btnRotateScreen.classList.add('hidden', 'sm:flex');
+        if (hudCoinsBtn) hudCoinsBtn.classList.add('max-sm:hidden');
+        if (btnRotateScreen) btnRotateScreen.classList.add('max-sm:hidden');
         if (pauseOverlay) pauseOverlay.classList.add('hidden');
         if (reviveOverlay) reviveOverlay.classList.add('hidden');
         if (shopOverlay) shopOverlay.classList.add('hidden');
@@ -2969,8 +3029,13 @@
           pendingCrashCause = cause || 'foot_cone';
           revivePromptTimer = 6.0;
           isPressing = false;
+          if (mobileActionBtnWrap) mobileActionBtnWrap.classList.add('hidden');
+          if (multiTouchOverlay) multiTouchOverlay.classList.add('hidden');
           sound.stopAllImmediate();
           sound.playWarning();
+          if (reviveContextText) {
+            reviveContextText.textContent = `Você caiu aos ${Math.floor(distance)}m! Recorra agora para recuperar +2 integrantes, +4h no relógio e Escudo de Imunidade!`;
+          }
           if (reviveTimerBar) reviveTimerBar.style.width = '100%';
           updateWalletAndBoostsUI();
           reviveOverlay.classList.remove('hidden');
@@ -3021,6 +3086,8 @@
 
         sound.setPhaseMode(currentPhase, getCurrentCombo());
         sound.playPhaseUp();
+        setupMultiTouchZones();
+        updateMobileActionButton();
         updatePowerupHUD();
         updateProgressHUD();
         spawnExplosion(player.x, player.y - 20, '#38bdf8', 24);
@@ -3030,6 +3097,7 @@
 
       function triggerCrash(cause) {
         if (reviveOverlay) reviveOverlay.classList.add('hidden');
+        if (mobileActionBtnWrap) mobileActionBtnWrap.classList.add('hidden');
         state = STATES.CRASHING;
         isPressing = false;
         multiTouchOverlay.classList.add('hidden');
@@ -3069,8 +3137,8 @@
         if (btnPause) btnPause.classList.add('hidden');
         if (pauseOverlay) pauseOverlay.classList.add('hidden');
         if (mobileActionBtnWrap) mobileActionBtnWrap.classList.add('hidden');
-        if (hudCoinsBtn) hudCoinsBtn.classList.remove('hidden', 'sm:flex');
-        if (btnRotateScreen) btnRotateScreen.classList.remove('hidden', 'sm:flex');
+        if (hudCoinsBtn) hudCoinsBtn.classList.remove('max-sm:hidden');
+        if (btnRotateScreen) btnRotateScreen.classList.remove('max-sm:hidden');
         hudCenterMetrics.classList.add('hidden');
         hudPhaseProgressWrap.classList.add('hidden');
         multiTouchOverlay.classList.add('hidden');
@@ -3299,9 +3367,11 @@
         c.font = '900 23px Inter, sans-serif';
         c.fillText('DESAFIE SEUS AMIGOS A ESCAPAR ANTES DAS 24H!', W * 0.5, 1245);
 
-        latestShareDataUrl = off.toDataURL('image/png');
-        shareCardPreview.src = latestShareDataUrl;
-        off.toBlob((blob) => { latestShareBlob = blob; }, 'image/png');
+        try {
+          latestShareDataUrl = off.toDataURL('image/png');
+          if (shareCardPreview) shareCardPreview.src = latestShareDataUrl;
+          off.toBlob((blob) => { latestShareBlob = blob; }, 'image/png');
+        } catch (err) {}
       }
 
       function copyFallbackText(text) {
@@ -3716,7 +3786,7 @@
         skylineScrollX = (skylineScrollX + currentSpeed * 0.28 * dt) % 1600;
         for (const c of clouds) {
           c.x -= currentSpeed * c.speedFactor * dt;
-          if (c.x < -200) { c.x = worldWidth + 160; c.y = 55 + Math.random() * 320; }
+          if (c.x < -200) { c.x = worldWidth + 160; c.yRatio = 0.08 + Math.random() * 0.44; }
         }
 
         distance += currentSpeed * dt * 0.046;
@@ -4220,7 +4290,7 @@
         skyGrad.addColorStop(0.56, cycle.skyMid);
         skyGrad.addColorStop(1, cycle.skyBot);
         ctx.fillStyle = skyGrad;
-        ctx.fillRect(0, 0, worldWidth, WORLD_HEIGHT);
+        ctx.fillRect(-60, -60, worldWidth + 120, WORLD_HEIGHT + 120);
 
         // Estrelas cintilantes quando entardece / anoitece
         if (cycle.nightFactor > 0.22) {
@@ -4232,7 +4302,7 @@
             const twinkle = 0.45 + 0.55 * Math.sin(nowSec + st.phase);
             ctx.globalAlpha = starBaseAlpha * twinkle;
             ctx.beginPath();
-            ctx.arc(st.xRatio * worldWidth, st.y, st.r, 0, Math.PI * 2);
+            ctx.arc(st.xRatio * worldWidth, st.yRatio * GROUND_Y, st.r, 0, Math.PI * 2);
             ctx.fill();
           }
           ctx.restore();
@@ -4242,7 +4312,7 @@
         if (cycle.t < 0.76) {
           const sunProgress = Math.min(1, cycle.t / 0.72);
           const sunX = worldWidth * (0.78 - sunProgress * 0.14);
-          const sunY = 115 + sunProgress * 250;
+          const sunY = Math.min(GROUND_Y - 60, GROUND_Y * (0.16 + sunProgress * 0.40));
           const sunAlpha = Math.max(0, 1 - Math.max(0, (cycle.t - 0.58) / 0.18));
           ctx.save();
           ctx.globalAlpha = sunAlpha;
@@ -4261,7 +4331,7 @@
         if (cycle.nightFactor > 0.28) {
           const moonAlpha = Math.min(1, (cycle.nightFactor - 0.28) / 0.55);
           const moonX = worldWidth * 0.80;
-          const moonY = 125 - moonAlpha * 18;
+          const moonY = GROUND_Y * 0.20 - moonAlpha * 18;
           ctx.save();
           ctx.globalAlpha = moonAlpha;
           ctx.fillStyle = 'rgba(186, 230, 253, 0.18)';
@@ -4281,7 +4351,7 @@
 
         for (const c of clouds) {
           ctx.save();
-          ctx.translate(c.x, c.y);
+          ctx.translate(c.x, (c.yRatio !== undefined ? c.yRatio * GROUND_Y : 160));
           ctx.scale(c.scale, c.scale);
           const cloudAlpha = c.alpha * (1 - cycle.nightFactor * 0.55);
           ctx.fillStyle =
@@ -4455,31 +4525,31 @@
 
         if (currentPhase === PHASES.FOOT) {
           ctx.fillStyle = cycle.nightFactor > 0.5 ? '#64748b' : '#cbd5e1';
-          ctx.fillRect(0, GROUND_Y, worldWidth, WORLD_HEIGHT - GROUND_Y);
+          ctx.fillRect(-60, GROUND_Y, worldWidth + 120, WORLD_HEIGHT - GROUND_Y + 80);
           ctx.fillStyle = cycle.nightFactor > 0.5 ? '#475569' : '#94a3b8';
-          ctx.fillRect(0, GROUND_Y, worldWidth, 10);
+          ctx.fillRect(-60, GROUND_Y, worldWidth + 120, 10);
           const tileOff = (distance * 22) % 80;
           ctx.fillStyle = 'rgba(15, 23, 42, 0.25)';
-          for (let tx = -tileOff; tx < worldWidth; tx += 80) {
+          for (let tx = -tileOff; tx < worldWidth + 80; tx += 80) {
             ctx.fillRect(tx, GROUND_Y + 24, 38, 12);
             ctx.fillRect(tx + 40, GROUND_Y + 46, 38, 12);
           }
         } else if (currentPhase === PHASES.CAR) {
           ctx.fillStyle = '#0f172a';
-          ctx.fillRect(0, GROUND_Y, worldWidth, WORLD_HEIGHT - GROUND_Y);
+          ctx.fillRect(-60, GROUND_Y, worldWidth + 120, WORLD_HEIGHT - GROUND_Y + 80);
           ctx.fillStyle = '#facc15';
-          ctx.fillRect(0, GROUND_Y, worldWidth, 8);
+          ctx.fillRect(-60, GROUND_Y, worldWidth + 120, 8);
           const dashOff = (distance * 32) % 110;
           ctx.fillStyle = '#ffffff';
-          for (let dx = -dashOff; dx < worldWidth; dx += 110) {
+          for (let dx = -dashOff; dx < worldWidth + 110; dx += 110) {
             ctx.fillRect(dx, GROUND_Y + 42, 56, 8);
           }
         } else {
           const floorY = WORLD_HEIGHT - 54;
           ctx.fillStyle = cycle.nightFactor > 0.5 ? '#064e3b' : '#15803d';
-          ctx.fillRect(0, floorY, worldWidth, 54);
+          ctx.fillRect(-60, floorY, worldWidth + 120, 140);
           ctx.fillStyle = cycle.nightFactor > 0.5 ? '#10b981' : '#22c55e';
-          ctx.fillRect(0, floorY, worldWidth, 10);
+          ctx.fillRect(-60, floorY, worldWidth + 120, 10);
         }
       }
 
@@ -5586,6 +5656,14 @@
       }
 
       function render() {
+        // Garante sincronia exata entre canvas e viewport a qualquer momento (fullscreen, rotação, barra do celular)
+        const rect = canvas.getBoundingClientRect ? canvas.getBoundingClientRect() : null;
+        if (rect && rect.width > 0 && rect.height > 0 && (Math.abs(rect.width - lastViewportW) > 1 || Math.abs(rect.height - lastViewportH) > 1)) {
+          handleViewportChange();
+        }
+        ctx.fillStyle = '#020617';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
         ctx.save();
         ctx.scale(renderScale, renderScale);
 
@@ -5764,6 +5842,10 @@
       if (btnReviveWatchAd) {
         btnReviveWatchAd.addEventListener('click', (e) => {
           e.stopPropagation();
+          if (hasVipPass) {
+            executeReviveContinue();
+            return;
+          }
           // Pausa o cronômetro do prompt enquanto o vídeo roda
           revivePromptTimer = 999;
           MonetizationSDK.showRewardedAd('ReviveHabeasCorpus', () => {
@@ -5825,19 +5907,34 @@
       }
 
       function gameLoop(timestamp) {
-        if (lastTime === 0) lastTime = timestamp;
-        const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
-        lastTime = timestamp;
-        update(dt);
-        render();
+        try {
+          if (lastTime === 0) lastTime = timestamp;
+          const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
+          lastTime = timestamp;
+          update(dt);
+          render();
+        } catch (err) {
+          console.error('Erro no gameLoop:', err);
+        }
         requestAnimationFrame(gameLoop);
       }
 
-      window.onload = function () {
+      let loopStarted = false;
+      function bootGame() {
         handleViewportChange();
         updateGarageAndShortcutsUI();
-        requestAnimationFrame(gameLoop);
-      };
+        if (!loopStarted) {
+          loopStarted = true;
+          requestAnimationFrame(gameLoop);
+        }
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bootGame);
+      } else {
+        bootGame();
+      }
+      window.addEventListener('load', handleViewportChange);
     })();
   </script>
 </body>
