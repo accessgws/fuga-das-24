@@ -18,11 +18,27 @@
   <style>
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html, body {
-      margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
+      margin: 0; padding: 0; width: 100%; height: 100%; height: 100dvh; overflow: hidden;
       background-color: #020617;
       font-family: 'Fredoka', 'Inter', system-ui, -apple-system, sans-serif;
       user-select: none; -webkit-user-select: none;
       touch-action: none;
+    }
+    /* Permite rolagem vertical suave com o dedo dentro dos modais no celular */
+    .overflow-y-auto {
+      touch-action: pan-y !important;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+    }
+    .safe-top-hud {
+      padding-top: max(0.5rem, env(safe-area-inset-top));
+    }
+    .safe-bottom-zone {
+      padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+    }
+    .mobile-action-pressed {
+      transform: translateY(4px) scale(0.95) !important;
+      filter: brightness(1.15);
     }
     .font-display { font-family: 'Bangers', 'Space Grotesk', sans-serif; letter-spacing: 0.05em; }
     .hidden { display: none !important; }
@@ -221,7 +237,7 @@
   </div>
 
   <!-- HUD SUPERIOR FIXO ESTILO ARCADE -->
-  <header id="gameHud" class="fixed top-0 left-0 right-0 z-20 flex flex-col gap-1.5 px-2.5 pt-2 sm:px-5 sm:pt-3 pointer-events-none">
+  <header id="gameHud" class="safe-top-hud fixed top-0 left-0 right-0 z-20 flex flex-col gap-1 sm:gap-1.5 px-2 pt-2 sm:px-5 sm:pt-3 pointer-events-none">
     <div class="flex items-center justify-between gap-1.5 sm:gap-2">
       <!-- Esquerda: Início / Garagem ou Placa de Recorde -->
       <div class="flex items-center gap-1.5 pointer-events-auto">
@@ -351,30 +367,40 @@
     </div>
 
     <!-- Barra de Progresso Arcade das 3 Fases + Fronteira -->
-    <div id="hudPhaseProgressWrap" class="hidden mx-auto w-full max-w-xl glass-pill rounded-2xl px-3 py-1.5 pointer-events-auto">
-      <div class="flex items-center justify-between text-[10px] font-black mb-1">
-        <span id="stepFootLabel" class="text-emerald-400">🏃 1. A Pé (0m)</span>
+    <div id="hudPhaseProgressWrap" class="hidden mx-auto w-full max-w-xl glass-pill rounded-2xl px-2.5 py-1 sm:px-3 sm:py-1.5 pointer-events-auto">
+      <div class="flex items-center justify-between text-[9px] sm:text-[10px] font-black mb-1">
+        <span id="stepFootLabel" class="text-emerald-400">🏃 <span class="hidden xs:inline">1. </span>A Pé (0m)</span>
         <span class="text-slate-600">▸</span>
-        <span id="stepCarLabel" class="text-slate-400">🚓 2. Carro (250m)</span>
+        <span id="stepCarLabel" class="text-slate-400">🚓 <span class="hidden xs:inline">2. </span>Carro (250m)</span>
         <span class="text-slate-600">▸</span>
-        <span id="stepPlaneLabel" class="text-slate-400">✈️ 3. Avião (600m)</span>
+        <span id="stepPlaneLabel" class="text-slate-400">✈️ <span class="hidden xs:inline">3. </span>Avião (600m)</span>
         <span class="text-slate-600">▸</span>
         <span id="stepBorderLabel" class="text-slate-400">🛂 Asilo (1000m)</span>
       </div>
-      <div class="relative w-full h-2.5 rounded-full bg-slate-950 overflow-hidden border-2 border-slate-950 shadow-inner">
+      <div class="relative w-full h-2 sm:h-2.5 rounded-full bg-slate-950 overflow-hidden border-2 border-slate-950 shadow-inner">
         <div class="absolute top-0 bottom-0 left-1/2 w-0.5 bg-slate-500/80 z-10"></div>
         <div class="absolute top-0 bottom-0 left-[85%] w-0.5 bg-slate-500/80 z-10"></div>
         <div id="phaseProgressFill" class="h-full rounded-full bg-gradient-to-r from-emerald-400 via-sky-400 to-amber-400 transition-all duration-150" style="width: 0%;"></div>
       </div>
-      <div class="flex items-center justify-between mt-1">
-        <span id="hudControlHint" class="text-[10px] font-bold text-slate-300">Toque / Espaço: Pular (2x)</span>
-        <span id="hudNextGoalText" class="text-[10px] font-black text-amber-300">Faltam 250m p/ Carro</span>
+      <div class="flex items-center justify-between mt-0.5 sm:mt-1">
+        <span id="hudControlHint" class="text-[9px] sm:text-[10px] font-bold text-slate-300 truncate">Toque / Espaço: Pular (2x)</span>
+        <span id="hudNextGoalText" class="text-[9px] sm:text-[10px] font-black text-amber-300 shrink-0 ml-1">Faltam 250m p/ Carro</span>
       </div>
     </div>
   </header>
 
+  <!-- BOTÃO DE AÇÃO TÁTIL NO POLEGAR DIREITO (MODO 1P MOBILE / TABLET / DESKTOP) -->
+  <div id="mobileActionBtnWrap" class="hidden safe-bottom-zone fixed bottom-3 right-3 sm:bottom-5 sm:right-5 z-20 pointer-events-auto">
+    <button id="mobileActionBtn" type="button"
+      class="btn-primary rounded-3xl w-24 h-24 sm:w-28 sm:h-28 flex flex-col items-center justify-center gap-0.5 text-white select-none cursor-pointer opacity-90 hover:opacity-100">
+      <span id="mobileActionIcon" class="text-2xl sm:text-3xl leading-none">🦘</span>
+      <span id="mobileActionTitle" class="font-display text-sm sm:text-base tracking-wider leading-none mt-0.5">PULAR 2X</span>
+      <span id="mobileActionSub" class="text-[8.5px] font-black uppercase text-emerald-100/90 leading-none">Toque / Segure</span>
+    </button>
+  </div>
+
   <!-- ZONAS MULTITOQUE SIMULTÂNEAS (APENAS MODO 2P-4P LOCAL DURANTE PARTIDA) -->
-  <div id="multiTouchOverlay" class="hidden fixed inset-x-0 bottom-0 h-28 z-10 grid gap-1.5 p-2 pointer-events-auto"></div>
+  <div id="multiTouchOverlay" class="hidden safe-bottom-zone fixed inset-x-0 bottom-0 h-28 z-20 grid gap-1.5 p-2 pointer-events-auto"></div>
 
   <!-- BANNER DE TRANSIÇÃO DE FASE ESTILO PLANTÃO DE TV -->
   <div id="phaseBanner" class="hidden fixed top-24 sm:top-28 left-1/2 z-30 pointer-events-none w-[92%] max-w-md">
@@ -970,6 +996,11 @@
       const hudNextGoalText = document.getElementById('hudNextGoalText');
 
       const multiTouchOverlay = document.getElementById('multiTouchOverlay');
+      const mobileActionBtnWrap = document.getElementById('mobileActionBtnWrap');
+      const mobileActionBtn = document.getElementById('mobileActionBtn');
+      const mobileActionIcon = document.getElementById('mobileActionIcon');
+      const mobileActionTitle = document.getElementById('mobileActionTitle');
+      const mobileActionSub = document.getElementById('mobileActionSub');
       const phaseBanner = document.getElementById('phaseBanner');
       const phaseBannerSub = document.getElementById('phaseBannerSub');
       const phaseBannerTitle = document.getElementById('phaseBannerTitle');
@@ -2225,17 +2256,31 @@
         canvas.width = Math.max(1, Math.floor(width * dpr));
         canvas.height = Math.max(1, Math.floor(height * dpr));
 
-        WORLD_HEIGHT = 720;
-        renderScale = canvas.height / WORLD_HEIGHT;
-        worldWidth = canvas.width / renderScale;
+        // No modo Retrato Mobile ("Jogar em Pé"), garante no mínimo 650px de visão horizontal da pista
+        const baseWorldH = 720;
+        const rawScale = canvas.height / baseWorldH;
+        const rawWorldW = canvas.width / rawScale;
+        const minPortraitWorldW = 650;
 
-        GROUND_Y = isLandscapeMode ? WORLD_HEIGHT - 96 : WORLD_HEIGHT - 114;
-        CEILING_Y = isLandscapeMode ? 76 : 94;
+        if (!isLandscapeMode && rawWorldW < minPortraitWorldW) {
+          worldWidth = minPortraitWorldW;
+          renderScale = canvas.width / worldWidth;
+          WORLD_HEIGHT = canvas.height / renderScale;
+        } else {
+          WORLD_HEIGHT = baseWorldH;
+          renderScale = rawScale;
+          worldWidth = rawWorldW;
+        }
+
+        GROUND_Y = isLandscapeMode
+          ? WORLD_HEIGHT - 96
+          : Math.min(WORLD_HEIGHT - 165, Math.max(520, Math.floor(WORLD_HEIGHT * 0.77)));
+        CEILING_Y = isLandscapeMode ? 76 : Math.max(105, Math.floor(WORLD_HEIGHT * 0.14));
         jumpScaleFactor = isLandscapeMode ? Math.max(0.84, Math.min(0.96, height / 460)) : 1.0;
 
         player.x = isLandscapeMode
           ? Math.max(255, Math.min(340, worldWidth * 0.25))
-          : Math.max(125, Math.min(200, worldWidth * 0.27));
+          : Math.max(165, Math.min(225, worldWidth * 0.28));
 
         if (player.grounded) player.y = GROUND_Y;
         squadMembers.forEach((m) => { if (m.grounded) m.y = GROUND_Y; });
@@ -2439,11 +2484,34 @@
         }
       }
 
+      function updateMobileActionButton() {
+        if (!mobileActionBtnWrap) return;
+        const showSingleAction = state === STATES.PLAYING && (humanCount <= 1 || lobbyTab !== 'local');
+        mobileActionBtnWrap.classList.toggle('hidden', !showSingleAction);
+        if (!showSingleAction) return;
+
+        if (currentPhase === PHASES.FOOT) {
+          if (mobileActionIcon) mobileActionIcon.textContent = '🦘';
+          if (mobileActionTitle) mobileActionTitle.textContent = 'PULAR 2X';
+          if (mobileActionSub) mobileActionSub.textContent = 'Toque / Segure';
+        } else if (currentPhase === PHASES.CAR) {
+          if (mobileActionIcon) mobileActionIcon.textContent = '🛞';
+          if (mobileActionTitle) mobileActionTitle.textContent = 'SALTO 2X';
+          if (mobileActionSub) mobileActionSub.textContent = 'Hidráulica';
+        } else {
+          if (mobileActionIcon) mobileActionIcon.textContent = '✈️';
+          if (mobileActionTitle) mobileActionTitle.textContent = 'SUBIR';
+          if (mobileActionSub) mobileActionSub.textContent = 'Segure o Botão';
+        }
+      }
+
       function setupMultiTouchZones() {
         if (humanCount <= 1 || lobbyTab !== 'local') {
           multiTouchOverlay.classList.add('hidden');
+          updateMobileActionButton();
           return;
         }
+        if (mobileActionBtnWrap) mobileActionBtnWrap.classList.add('hidden');
         multiTouchOverlay.innerHTML = '';
         multiTouchOverlay.style.gridTemplateColumns = `repeat(${humanCount}, minmax(0, 1fr))`;
         for (let i = 0; i < humanCount; i++) {
@@ -2477,24 +2545,44 @@
         multiTouchOverlay.classList.remove('hidden');
       }
 
-      canvas.addEventListener('pointerdown', (e) => {
-        if (e.cancelable) e.preventDefault();
+      const startPrimaryPress = (e) => {
+        if (e && e.cancelable) e.preventDefault();
         sound.init();
         if (state === STATES.PLAYING) {
-          if (!isPressing) triggerSlotJump(0);
+          if (!isPressing) {
+            triggerSlotJump(0);
+            try { if (navigator.vibrate) navigator.vibrate(10); } catch (err) {}
+          }
           isPressing = true;
           squadMembers[0].pressing = true;
+          if (mobileActionBtn) mobileActionBtn.classList.add('mobile-action-pressed');
         }
-      });
+      };
 
       const stopCanvasPress = (e) => {
         if (e && e.cancelable) e.preventDefault();
         isPressing = false;
         squadMembers[0].pressing = false;
+        if (mobileActionBtn) mobileActionBtn.classList.remove('mobile-action-pressed');
       };
+
+      canvas.addEventListener('pointerdown', startPrimaryPress);
       canvas.addEventListener('pointerup', stopCanvasPress);
       canvas.addEventListener('pointercancel', stopCanvasPress);
       canvas.addEventListener('pointerleave', stopCanvasPress);
+
+      if (mobileActionBtn) {
+        mobileActionBtn.addEventListener('pointerdown', (e) => {
+          e.stopPropagation();
+          startPrimaryPress(e);
+        });
+        mobileActionBtn.addEventListener('pointerup', (e) => {
+          e.stopPropagation();
+          stopCanvasPress(e);
+        });
+        mobileActionBtn.addEventListener('pointercancel', stopCanvasPress);
+        mobileActionBtn.addEventListener('pointerleave', stopCanvasPress);
+      }
 
       function togglePauseGame() {
         if (state === STATES.PLAYING) {
@@ -2598,6 +2686,9 @@
         if (pauseOverlay) pauseOverlay.classList.add('hidden');
         if (reviveOverlay) reviveOverlay.classList.add('hidden');
         if (shopOverlay) shopOverlay.classList.add('hidden');
+        if (mobileActionBtnWrap) mobileActionBtnWrap.classList.add('hidden');
+        if (hudCoinsBtn) hudCoinsBtn.classList.remove('hidden', 'sm:flex');
+        if (btnRotateScreen) btnRotateScreen.classList.remove('hidden', 'sm:flex');
         hudCenterMetrics.classList.add('hidden');
         hudPhaseProgressWrap.classList.add('hidden');
         multiTouchOverlay.classList.add('hidden');
@@ -2704,6 +2795,8 @@
         hudStartBestPill.classList.add('hidden');
         btnHudHome.classList.remove('hidden');
         if (btnPause) btnPause.classList.remove('hidden');
+        if (hudCoinsBtn) hudCoinsBtn.classList.add('hidden', 'sm:flex');
+        if (btnRotateScreen) btnRotateScreen.classList.add('hidden', 'sm:flex');
         if (pauseOverlay) pauseOverlay.classList.add('hidden');
         if (reviveOverlay) reviveOverlay.classList.add('hidden');
         if (shopOverlay) shopOverlay.classList.add('hidden');
@@ -2714,6 +2807,7 @@
         newRecordBadge.classList.add('hidden');
 
         setupMultiTouchZones();
+        updateMobileActionButton();
         updatePowerupHUD();
         updateProgressHUD();
 
@@ -2749,6 +2843,7 @@
 
         sound.playPhaseUp();
         sound.setPhaseMode(PHASES.CAR, getCurrentCombo());
+        updateMobileActionButton();
         spawnExplosion(player.x, player.y - 16, '#facc15', 22);
         addFloatingText(player.x + 30, player.y - 54, 'COMITIVA EMBARCADA!', '#facc15');
         triggerPhaseBanner('250M ALCANÇADOS!', 'FASE 2: PÉ NA TÁBUA ATÉ O AEROPORTO!');
@@ -2777,6 +2872,7 @@
 
         sound.playPhaseUp();
         sound.setPhaseMode(PHASES.PLANE, getCurrentCombo());
+        updateMobileActionButton();
         spawnExplosion(player.x, player.y, '#22c55e', 24);
         addFloatingText(player.x + 30, player.y - 46, 'DECOLAGEM DE EMERGÊNCIA!', '#4ade80');
         triggerPhaseBanner('600M • AEROPORTO ALCANÇADO!', 'FASE 3: FUJAM PELOS CÉUS!');
@@ -2972,6 +3068,9 @@
         btnHudHome.classList.add('hidden');
         if (btnPause) btnPause.classList.add('hidden');
         if (pauseOverlay) pauseOverlay.classList.add('hidden');
+        if (mobileActionBtnWrap) mobileActionBtnWrap.classList.add('hidden');
+        if (hudCoinsBtn) hudCoinsBtn.classList.remove('hidden', 'sm:flex');
+        if (btnRotateScreen) btnRotateScreen.classList.remove('hidden', 'sm:flex');
         hudCenterMetrics.classList.add('hidden');
         hudPhaseProgressWrap.classList.add('hidden');
         multiTouchOverlay.classList.add('hidden');
