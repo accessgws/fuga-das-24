@@ -1,0 +1,11 @@
+{
+  "name": "fuga-das-24h",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Fuga das 24h — Charge Arcade HTML5 Game (3 fases, 1-4P, Ciclo 24h e Loja VIP)",
+  "scripts": {
+    "dev": "npx serve . -l 8424",
+    "start": "npx serve . -l 8424",
+    "build": "echo \"Static HTML5 build ready\""
+  }
+}
